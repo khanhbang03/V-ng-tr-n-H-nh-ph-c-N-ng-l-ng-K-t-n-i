@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Vòng tròn Hạnh phúc — Hưng & Friends</title>
+<style>
+  :root{
+    --bg-dark: #051030;
+    --accent: #ffd166;
+    --glow: 0 0 18px rgba(255,209,102,0.9);
+    --soft: rgba(255,255,255,0.06);
+    --text: #fff;
+  }
+  html,body{height:100%;margin:0;font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  body{
+    background: radial-gradient(circle at 20% 10%, #08203a 0%, #021019 30%, #000814 100%);
+    color:var(--text);
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* Stage */
+  .stage{
+    width:95vw;
+    max-width:1200px;
+    height:78vh;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.15));
+    border-radius:16px;
+    position:relative;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    overflow:hidden;
+    padding:18px;
+    box-sizing:border-box;
+  }
+
+  header.header{
+    position:absolute; top:14px; left:18px; z-index:30;
+    display:flex; gap:12px; align-items:center;
+  }
+  .title{
+    font-size:20px; font-weight:700; letter-spacing:0.4px;
+    text-shadow: 0 0 8px rgba(255,215,102,0.25);
+  }
+  .small{
+    font-size:12px; opacity:0.9;
+  }
+
+  /* skyline layers */
+  .skyline{
+    position:absolute; inset:0; z-index:1; pointer-events:none;
+    display:flex; align-items:flex-end; justify-content:center;
+    transition: opacity 1s ease;
+  }
+  .skyline svg{ width:120%; height:auto; opacity:0.95; }
+
+  /* overlay glow */
+  .glow-overlay{
+    position:absolute; inset:0; z-index:2; mix-blend-mode:screen; pointer-events:none;
+    background: radial-gradient(circle at 50% 20%, rgba(255,200,150,0.06), transparent 10%),
+                radial-gradient(circle at 80% 80%, rgba(130,200,255,0.03), transparent 10%);
+  }
+
+  /* center message */
+  .center-msg{
+    position:absolute; z-index:25; left:50%; top:10%; transform:translateX(-50%);
+    text-align:center;
+  }
+  .center-msg h1{ margin:0; font-size:28px; text-transform:none; letter-spacing:0.6px;
+    color:var(--accent); text-shadow: var(--glow); }
+  .center-msg p{ margin:8px 0 0 0; font-size:14px; color:rgba(255,255,255,0.9); }
+
+  /* the energy circles (people) */
+  .orbit-container{ position:absolute; inset:0; z-index:6; pointer-events:none; }
+  .node{
+    position:absolute; width:120px; height:120px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    color:#012; font-weight:700; text-align:center; box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    transform: translate(-50%,-50%);
+    transition: transform 0.6s ease, box-shadow 0.3s ease;
+    pointer-events:auto;
+  }
+  .node .label{ font-size:13px; color:white; text-shadow: 0 0 6px rgba(0,0,0,0.6); }
+  .node .halo{
+    position:absolute; inset:0; border-radius:50%;
+    filter: blur(18px); opacity:0.95; z-index:-1;
+  }
+
+  /* colors for nodes */
+  .n-annie { background: linear-gradient(135deg,#ff9a9e,#fecfef); }
+  .n-trang  { background: linear-gradient(135deg,#a1c4fd,#c2e9fb); }
+  .n-bang   { background: linear-gradient(135deg,#c6ffdd,#fbd786); }
+  .n-ali    { background: linear-gradient(135deg,#fbd3e9,#bbf7d0); }
+  .n-mrudav { background: linear-gradient(135deg,#fbc2eb,#a6c1ee); }
+  .n-duong  { background: linear-gradient(135deg,#ffd4a3,#ffb3a7); }
+
+  /* small name underneath */
+  .node .sub{ font-size:11px; margin-top:6px; color:rgba(0,0,0,0.55); font-weight:600; }
+
+  /* racket (Hưng) */
+  #racket {
+    position:absolute; width:120px; height:auto; z-index:20; left:50%; top:62%;
+    transform:translate(-50%,-50%) rotate(0deg);
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,0.6));
+    transition: transform 0.9s cubic-bezier(.2,.9,.3,1);
+    cursor:pointer;
+  }
+
+  /* CTA controls */
+  .controls{
+    position:absolute; right:18px; bottom:18px; z-index:30; display:flex; gap:10px;
+  }
+  .btn{
+    background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border:1px solid rgba(255,255,255,0.06);
+    color:var(--text); padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:700;
+    backdrop-filter: blur(6px);
+  }
+  .btn:active{ transform:translateY(2px); }
+
+  /* small sparkle elements */
+  .sparkle {
+    position:absolute; width:6px; height:6px; border-radius:50%; z-index:4;
+    background:radial-gradient(circle, #fff 0%, rgba(255,255,255,0.6) 30%, transparent 70%);
+    opacity:0.95; filter: blur(1px);
+  }
+
+  /* transition state for moving to SG */
+  .to-sg .sky-hcm{ opacity:0; transform: translateY(30px) scale(0.98); }
+  .to-sg .sky-sg{ opacity:1; transform: translateY(0) scale(1); }
+  .sky-sg{ opacity:0; transform: translateY(30px) scale(0.98); transition:all 1s ease; }
+  .sky-hcm{ transition:all 1s ease; }
+
+  /* responsive */
+  @media (max-width:700px){
+    .node{ width:90px; height:90px; }
+    #racket{ width:92px; top:68%; }
+    .center-msg h1{ font-size:18px; }
+    .center-msg p{ font-size:12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <div class="header">
+    <div class="title">Vòng tròn Hạnh phúc — Năng lượng & Kết nối</div>
+    <div class="small">Bắt đầu: TP. Hồ Chí Minh → Đích: Singapore</div>
+  </div>
+
+  <!-- skyline HCM (simple SVG silhouette) -->
+  <div class="skyline sky-hcm" id="sky-hcm" style="z-index:1;">
+    <!-- simplified HCM skyline -->
+    <svg viewBox="0 0 1400 220" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#0f3359" stop-opacity="0.9"/>
+          <stop offset="1" stop-color="#021019" stop-opacity="0.95"/>
+        </linearGradient>
+      </defs>
+      <rect width="1400" height="220" fill="url(#g1)"/>
+      <g fill="#021019" opacity="0.95" transform="translate(0,20)">
+        <rect x="30" y="40" width="70" height="80"></rect>
+        <rect x="110" y="10" width="90" height="110"></rect>
+        <rect x="220" y="60" width="40" height="60"></rect>
+        <rect x="280" y="20" width="120" height="100"></rect>
+        <rect x="430" y="40" width="70" height="80"></rect>
+        <rect x="540" y="0" width="120" height="120"></rect>
+        <rect x="700" y="30" width="80" height="90"></rect>
+        <rect x="820" y="20" width="60" height="100"></rect>
+        <rect x="920" y="60" width="40" height="60"></rect>
+        <rect x="990" y="5" width="140" height="115"></rect>
+        <rect x="1180" y="35" width="130" height="80"></rect>
+      </g>
+    </svg>
+  </div>
+
+  <!-- skyline Singapore (simple stylized) -->
+  <div class="skyline sky-sg" id="sky-sg" style="z-index:1;">
+    <svg viewBox="0 0 1400 220" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <linearGradient id="g2" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#2a2640" stop-opacity="0.95"/>
+          <stop offset="1" stop-color="#02080a" stop-opacity="0.95"/>
+        </linearGradient>
+      </defs>
+      <rect width="1400" height="220" fill="url(#g2)"/>
+      <g fill="#02040a" transform="translate(0,20)">
+        <rect x="90" y="40" width="60" height="80"></rect>
+        <rect x="180" y="0" width="110" height="120"></rect>
+        <rect x="330" y="30" width="80" height="90"></rect>
+        <rect x="460" y="10" width="120" height="110"></rect>
+        <rect x="610" y="50" width="50" height="70"></rect>
+        <rect x="700" y="20" width="140" height="100"></rect>
+        <rect x="880" y="30" width="70" height="90"></rect>
+        <rect x="980" y="0" width="150" height="120"></rect>
+        <rect x="1180" y="40" width="80" height="80"></rect>
+      </g>
+    </svg>
+  </div>
+
+  <div class="glow-overlay"></div>
+
+  <div class="center-msg">
+    <h1>Vòng tròn Hạnh phúc của Bang & Friends</h1>
+    <p>Mong cho vòng tròn này luôn sáng rực yêu thương, bắt đầu ở TP. Hồ Chí Minh và dịch chuyển tới Singapore ✨</p>
+  </div>
+
+  <!-- orbit container: nodes placed absolutely -->
+  <div class="orbit-container" id="orbit">
+
+    <!-- nodes: positions tuned for desktop; JS will control motion -->
+    <div class="node n-annie" id="n-annie" style="left:24%; top:48%;">
+      <div class="halo" style="background: radial-gradient(circle, rgba(255,154,158,0.35), transparent 40%);"></div>
+      <div class="label">Annie Ngô</div>
+      <div class="sub">Bảo bối vui tươi</div>
+    </div>
+
+    <div class="node n-trang" id="n-trang" style="left:46%; top:22%;">
+      <div class="halo" style="background: radial-gradient(circle, rgba(161,196,253,0.35), transparent 40%);"></div>
+      <div class="label">Trang Nguyễn</div>
+      <div class="sub">Năng lượng nhẹ nhàng</div>
+    </div>
+
+    <div class="node n-bang" id="n-bang" style="left:70%; top:40%;">
+      <div class="halo" style="background: radial-gradient(circle, rgba(198,255,221,0.35), transparent 40%);"></div>
+      <div class="label">Nguyễn Khánh Bằng</div>
+      <div class="sub">Người truyền lửa</div>
+    </div>
+
+    <div class="node n-ali" id="n-ali" style="left:18%; top:72%;">
+      <div class="halo" style="background: radial-gradient(circle, rgba(251,211,233,0.35), transparent 40%);"></div>
+      <div class="label">Ali Akram</div>
+      <div class="sub">Hào sảng</div>
+    </div>
+
+    <div class="node n-mrudav" id="n-mrudav" style="left:50%; top:78%;">
+      <div class="halo" style="background: radial-gradient(circle, rgba(251,194,235,0.35), transparent 40%);"></div>
+      <div class="label">Mrudav Prashant Mehta</div>
+      <div class="sub">Tinh thần phiêu du</div>
+    </div>
+
+    <div class="node n-duong" id="n-duong" style="left:86%; top:70%;">
+      <div class="halo" style="background: radial-gradient(circle, rgba(255,212,163,0.35), transparent 40%);"></div>
+      <div class="label">Tạ Tùng Dương</div>
+      <div class="sub">Nguồn cảm hứng</div>
+    </div>
+
+  </div>
+
+  <!-- racket Hưng -->
+  <img id="racket" src="https://cdn-icons-png.flaticon.com/512/1053/1053196.png" alt="Vợt Muỗi Hưng">
+
+  <!-- sparkles generated dynamically -->
+  <!-- audio elements -->
+  <audio id="buzzSound" preload="auto">
+    <source src="https://www.soundjay.com/button/sounds/button-16.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="whoosh" preload="auto">
+    <source src="https://www.soundjay.com/misc/sounds/air-whoosh-1.mp3" type="audio/mpeg">
+  </audio>
+
+  <div class="controls" aria-hidden="false">
+    <button class="btn" id="btn-transition">Dịch chuyển sang Singapore ✨</button>
+    <button class="btn" id="btn-reset">Quay lại HCM ↺</button>
+  </div>
+
+</div>
+
+<script>
+  // Helper: random int
+  const rnd = (min,max) => Math.random()*(max-min)+min;
+
+  // Main elements
+  const stage = document.getElementById('stage');
+  const orbit = document.getElementById('orbit');
+  const nodes = Array.from(document.querySelectorAll('.node'));
+  const racket = document.getElementById('racket');
+  const buzz = document.getElementById('buzzSound');
+  const whoosh = document.getElementById('whoosh');
+  const skyHcm = document.getElementById('sky-hcm');
+  const skySg  = document.getElementById('sky-sg');
+  const btnTrans = document.getElementById('btn-transition');
+  const btnReset = document.getElementById('btn-reset');
+
+  // create subtle floating animations for nodes (orbits)
+  nodes.forEach((n, idx) => {
+    // randomize orbit radius and speed
+    const baseX = parseFloat(n.style.left);
+    const baseY = parseFloat(n.style.top);
+    const amp = rnd(2,6) + (idx%2?6:0);
+    const speed = rnd(3500,7000) + idx*300;
+
+    // apply continuous animation using requestAnimationFrame
+    let start = performance.now() - rnd(0,2000);
+    function animate(now){
+      const t = (now - start) / speed;
+      const dx = Math.sin(t*2*Math.PI) * amp;
+      const dy = Math.cos(t*2*Math.PI) * (amp/2);
+      n.style.left = (baseX + dx) + '%';
+      n.style.top  = (baseY + dy) + '%';
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+
+    // hover interaction: pop and play tiny sound (buzz subtle)
+    n.addEventListener('mouseenter', () => {
+      n.style.transform = 'translate(-50%,-50%) scale(1.08)';
+      n.style.boxShadow = '0 18px 60px rgba(0,0,0,0.6)';
+      // subtle audio: short play at low volume
+      try{ buzz.volume = 0.06; buzz.currentTime = 0; buzz.play(); }catch(e){}
+    });
+    n.addEventListener('mouseleave', () => {
+      n.style.transform = 'translate(-50%,-50%) scale(1)';
+      n.style.boxShadow = '';
+    });
+  });
+
+  // sparkle generation
+  for (let i=0;i<40;i++){
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.style.left = (Math.random()*100) + '%';
+    s.style.top = (Math.random()*100) + '%';
+    s.style.opacity = (0.3 + Math.random()*0.7);
+    s.style.transform = 'scale(' + (0.6 + Math.random()*1.4) + ')';
+    s.style.animation = `spark${i}  ${(4 + Math.random()*6)}s ease-in-out ${Math.random()*2}s infinite`;
+    // tiny keyframes created inline
+    const animName = 'spark' + i;
+    const rule = `@keyframes ${animName}{
+      0%{ transform:translateY(0) scale(0.8); opacity:0.6; }
+      50%{ transform:translateY(${rnd(-20,-60)}px) scale(1.2); opacity:0.2; }
+      100%{ transform:translateY(0) scale(0.9); opacity:0.6; }
+    }`;
+    // insert style
+    const styleSheet = document.styleSheets[0];
+    try { styleSheet.insertRule(rule, styleSheet.cssRules.length); } catch(e){}
+    document.body.appendChild(s);
+  }
+
+  // racket movement: follow mouse slowly, click to zap (play buzz)
+  document.body.addEventListener('mousemove', (e) => {
+    const rect = stage.getBoundingClientRect();
+    // keep racket inside stage
+    const x = Math.min(Math.max(e.clientX - rect.left, 20), rect.width-20);
+    const y = Math.min(Math.max(e.clientY - rect.top, 20), rect.height-20);
+    // ease movement
+    racket.style.left = (rect.left + x) + 'px';
+    racket.style.top  = (rect.top + y) + 'px';
+    // occasional auto-buzz
+    if(Math.random() < 0.015){
+      try{ buzz.volume = 0.11; buzz.currentTime = 0; buzz.play(); }catch(e){}
+      racket.style.transform = 'translate(-50%,-50%) rotate(' + rnd(-20,20) + 'deg) scale(1.02)';
+      setTimeout(()=> racket.style.transform = 'translate(-50%,-50%) rotate(0deg)', 240);
+    }
+  });
+
+  // click to play buzz and small flash near racket
+  racket.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    try{ buzz.volume = 0.2; buzz.currentTime = 0; buzz.play(); }catch(e){}
+    // quick flash
+    const f = document.createElement('div');
+    f.style.position='absolute';
+    f.style.left = (racket.getBoundingClientRect().left + 30) + 'px';
+    f.style.top  = (racket.getBoundingClientRect().top + 10) + 'px';
+    f.style.width='24px'; f.style.height='24px'; f.style.borderRadius='50%';
+    f.style.background = 'radial-gradient(circle, rgba(255,255,200,0.95), rgba(255,180,0,0.6))';
+    f.style.zIndex = 50; f.style.pointerEvents='none';
+    document.body.appendChild(f);
+    setTimeout(()=> f.remove(), 320);
+  });
+
+  // transition to Singapore: whoosh + swirl nodes + change skyline
+  function transitionToSG(){
+    // play whoosh
+    try{ whoosh.volume = 0.8; whoosh.currentTime = 0; whoosh.play(); }catch(e){}
+    // add class to stage for CSS transitions
+    stage.classList.add('to-sg');
+    // animate nodes inward to center then fan out to new positions
+    const centerX = 50, centerY = 48; // percent
+    nodes.forEach((n, idx) => {
+      // move to center quickly
+      n.style.transition = 'all 0.9s cubic-bezier(.2,.9,.3,1)';
+      n.style.left = centerX + '%';
+      n.style.top  = centerY + '%';
+      // small delay then fan out
+      setTimeout(() => {
+        // compute fan positions for SG layout
+        const angle = idx * (360 / nodes.length);
+        const dist = 22 + (idx%2?6:0);
+        const rad = (angle * Math.PI)/180;
+        const newL = centerX + Math.cos(rad)*dist;
+        const newT = centerY + Math.sin(rad)*dist;
+        n.style.left = newL + '%';
+        n.style.top = newT + '%';
+        // subtle scale/shine
+        n.style.transform = 'translate(-50%,-50%) scale(1.06)';
+        n.style.boxShadow = '0 20px 80px rgba(0,0,0,0.55)';
+        setTimeout(() => {
+          n.style.transform = 'translate(-50%,-50%) scale(1)';
+          n.style.boxShadow = '';
+        }, 900);
+      }, 900 + idx*80);
+    });
+
+    // tiny confetti-like sparkles toward SG direction
+    for(let i=0;i<18;i++){
+      setTimeout(()=> {
+        const s = document.createElement('div');
+        s.className='sparkle';
+        s.style.left = (60 + Math.random()*30)+'%';
+        s.style.top  = (10 + Math.random()*60)+'%';
+        s.style.width = (6 + Math.random()*8) + 'px';
+        s.style.height = s.style.width;
+        s.style.opacity = 1;
+        document.body.appendChild(s);
+        setTimeout(()=> s.remove(), 1600);
+      }, i*90);
+    }
+  }
+
+  // reset back to HCM layout
+  function resetToHCM(){
+    try{ whoosh.volume = 0.5; whoosh.currentTime = 0; whoosh.play(); }catch(e){}
+    stage.classList.remove('to-sg');
+    // restore node positions (initial approximate positions)
+    const positions = [
+      {left:24, top:48}, {left:46, top:22}, {left:70, top:40},
+      {left:18, top:72}, {left:50, top:78}, {left:86, top:70}
+    ];
+    nodes.forEach((n, idx) => {
+      n.style.transition = 'all 0.9s cubic-bezier(.2,.9,.3,1)';
+      n.style.left = positions[idx].left + '%';
+      n.style.top  = positions[idx].top + '%';
+      n.style.transform = 'translate(-50%,-50%) scale(1)';
+      n.style.boxShadow = '';
+    });
+  }
+
+  // hook buttons
+  btnTrans.addEventListener('click', () => { transitionToSG(); });
+  btnReset.addEventListener('click', () => { resetToHCM(); });
+
+  // automatic small gentle floating for racket to start
+  (function idleRacket(){
+    let t = 0;
+    function step(){ t+=0.02;
+      const rect = stage.getBoundingClientRect();
+      const cx = rect.left + rect.width*0.5;
+      const cy = rect.top + rect.height*0.62;
+      racket.style.left = (cx + Math.cos(t)*90) + 'px';
+      racket.style.top  = (cy + Math.sin(t*1.2)*36) + 'px';
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  })();
+
+  // accessibility: keyboard trigger
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 't') transitionToSG();
+    if(e.key === 'r') resetToHCM();
+    if(e.key === ' ') { // space - play buzz
+      try{ buzz.volume = 0.18; buzz.currentTime = 0; buzz.play(); }catch(e){}
+    }
+  });
+
+  // initial tiny whoosh to announce scene
+  setTimeout(()=>{ try{ whoosh.volume = 0.18; whoosh.currentTime=0; whoosh.play(); }catch(e){} }, 600);
+
+  // Make sure audio playback allowed: user gesture triggers when clicking stage
+  stage.addEventListener('click', ()=> {
+    try{ buzz.currentTime=0; }catch(e){}
+    try{ whoosh.currentTime=0; }catch(e){}
+  });
+</script>
+
+</body>
+</html>
